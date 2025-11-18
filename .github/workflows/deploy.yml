@@ -39,15 +39,15 @@ jobs:
           scp -o StrictHostKeyChecking=no -i key.pem target/Fintech.war $EC2_USER@$EC2_HOST:/tmp/Fintech.war
 
           echo "🛑 Parando Tomcat..."
-          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "systemctl stop tomcat9"
+          #ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "systemctl stop tomcat9"
 
           echo "🔄 Atualizando WAR..."
           ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "rm -rf /var/lib/tomcat9/webapps/Fintech /var/lib/tomcat9/webapps/Fintech.war"
           ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "mv /tmp/Fintech.war /var/lib/tomcat9/webapps/"
 
           echo "🧹 Limpando cache (work dir)..."
-          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "rm -rf /var/lib/tomcat9/work/*"
+          #ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "rm -rf /var/lib/tomcat9/work/*"
           echo "▶️ Iniciando Tomcat..."
-          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "systemctl start tomcat9"
+          #ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "systemctl start tomcat9"
 
           echo "✅ Deploy finalizado com sucesso!"

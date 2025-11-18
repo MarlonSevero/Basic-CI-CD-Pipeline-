@@ -1,0 +1,53 @@
+name: Deploy Fintech WAR to EC2
+
+'on':
+  push:
+    branches:
+      - main
+  workflow_dispatch: null
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout do código
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Instalar JDK 17 (Corretto)
+      - name: Set up JDK 17 (Corretto)
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '17'
+
+      # 3. Build Maven (gera Fintech.war)
+      - name: Build with Maven
+        run: mvn -B clean package --file pom.xml
+
+      # 4. Enviar WAR para EC2 e fazer deploy
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          echo "$EC2_SSH_KEY" > key.pem
+          chmod 600 key.pem
+
+          echo "📦 Enviando WAR..."
+          scp -o StrictHostKeyChecking=no -i key.pem target/Fintech.war $EC2_USER@$EC2_HOST:/tmp/Fintech.war
+
+          echo "🛑 Parando Tomcat..."
+          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "systemctl stop tomcat9"
+
+          echo "🔄 Atualizando WAR..."
+          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "rm -rf /var/lib/tomcat9/webapps/Fintech /var/lib/tomcat9/webapps/Fintech.war"
+          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "mv /tmp/Fintech.war /var/lib/tomcat9/webapps/"
+
+          echo "🧹 Limpando cache (work dir)..."
+          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "rm -rf /var/lib/tomcat9/work/*"
+          echo "▶️ Iniciando Tomcat..."
+          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST "systemctl start tomcat9"
+
+          echo "✅ Deploy finalizado com sucesso!"
